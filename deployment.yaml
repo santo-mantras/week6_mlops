@@ -1,22 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: iris-deployment
+  # Changed name to 'iris-deployment-dev'
+  name: iris-deployment-dev
 spec:
-  replicas: 2 # Run 2 instances of the app
+  replicas: 1 # Only 1 replica for dev
   selector:
     matchLabels:
-      app: iris-api
+      app: iris-api-dev
   template:
     metadata:
       labels:
-        app: iris-api
+        app: iris-api-dev
     spec:
       containers:
       - name: iris-api-container
-        # This __IMAGE_URL__ is a placeholder
-        # Our CI/CD pipeline will replace it with the real image URL
-        image: __IMAGE_URL__
+        image: __IMAGE_URL__ # This will be replaced by the pipeline
         ports:
         - containerPort: 8000
 
@@ -24,13 +23,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: iris-service
+  name: iris-service-dev
 spec:
-  # External network Load Balancer
   type: LoadBalancer
   selector:
-    app: iris-api
+    app: iris-api-dev 
   ports:
   - protocol: TCP
-    port: 80 # The port the Load Balancer listens on
-    targetPort: 8000 # The port our container is running on
+    port: 80
+    targetPort: 8000

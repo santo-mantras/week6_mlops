@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - dev
 
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
@@ -14,7 +15,6 @@ env:
   IMAGE_NAME: iris-api
 
 jobs:
-  # We now have one single job
   build-and-deploy:
     name: Build, Push, and Deploy
     runs-on: ubuntu-latest
@@ -32,9 +32,12 @@ jobs:
       run: gcloud auth configure-docker ${{ env.AR_LOCATION }}-docker.pkg.dev
 
     - name: Build and Tag the Docker Image
-      id: build # We still need the ID for the next steps
+      id: build
       run: |
-        export IMAGE_TAG="${{ env.AR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.AR_REPO }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+        # Because of unique tag it prevents 'dev' images from overwriting 'main' images
+        export BRANCH_NAME=$(echo ${{ github.ref_name }} | sed 's/[^a-zA-Z0-9]/-/g')
+        export IMAGE_TAG="${{ env.AR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.AR_REPO }}/${{ env.IMAGE_NAME }}:${BRANCH_NAME}-${{ github.sha }}"
+        
         docker build -t $IMAGE_TAG .
         echo "IMAGE_URL=$IMAGE_TAG" >> $GITHUB_OUTPUT
 
@@ -51,7 +54,7 @@ jobs:
       run: |
         echo "Deploying image: ${{ steps.build.outputs.IMAGE_URL }}"
         
-        # Replace the placeholder using the step output, which is now available
+        # Replace the placeholder in deployment.yaml
         sed -i 's|__IMAGE_URL__|${{ steps.build.outputs.IMAGE_URL }}|g' deployment.yaml
         
         echo "--- Applying deployment.yaml ---"
