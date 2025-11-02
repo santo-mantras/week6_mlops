@@ -1,7 +1,7 @@
 fastapi
 uvicorn
-scikit-learn
-joblib
+joblib==1.5.2
+scikit-learn==1.7.2
 numpy
 pandas
 gunicorn
